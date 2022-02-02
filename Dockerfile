@@ -75,4 +75,4 @@ RUN apt-get install -y libsm6 libxext6 libxrender-dev
 WORKDIR /app
 COPY . /app
 
-RUN pip3 install -r requirements.txt
+RUN pip3 install .
