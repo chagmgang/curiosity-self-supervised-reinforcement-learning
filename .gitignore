@@ -1,1 +1,6 @@
+.DS_Store
+runs/
+runs_no_simclr/
+weights/
+saved_impala/
 __pycache__/
