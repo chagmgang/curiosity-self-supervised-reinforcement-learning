@@ -88,37 +88,23 @@ def main(_):
         writer = SummaryWriter('runs/learner')
         train_step = 0
 
-        batch_sample_replay_buffer = utils.BatchSampleReplayBuffer(
-                batch_size=data['batch_size'],
-                collection_size=int(data['replay_buffer_size']))
+        #batch_sample_replay_buffer = utils.BatchSampleReplayBuffer(
+        #        batch_size=data['batch_size'],
+        #        collection_size=int(data['replay_buffer_size']))
         while True:
 
             ### fifo to replay buffer
             size = queue.get_size()
             if size > 3 * data['batch_size']:
                 batch = queue.sample_batch()
-                for i in range(data['batch_size']):
-                    batch_sample_replay_buffer.append(
-                            state=batch.state[i],
-                            reward=batch.reward[i],
-                            action=batch.action[i],
-                            done=batch.done[i],
-                            behavior_policy=batch.behavior_policy[i])
-
-            ### sample and training
-            if len(batch_sample_replay_buffer) > 3 * data['batch_size']:
                 train_step += 1
-                sample_from_buffer = batch_sample_replay_buffer.sample()
                 s = time.time()
                 pi_loss, baseline_loss, entropy, learning_rate, simclr_loss = learner.train(
-                    state=np.stack(sample_from_buffer['state']),
-                    reward=np.stack(sample_from_buffer['reward']),
-                    action=np.stack(sample_from_buffer['action']),
-                    done=np.stack(sample_from_buffer['done']),
-                    behavior_policy=np.stack(sample_from_buffer['behavior_policy'])
-                )
-
-                writer.add_scalar('data/replay_buffer_size', len(batch_sample_replay_buffer), train_step)
+                        state=np.stack(batch.state),
+                        reward=np.stack(batch.reward),
+                        action=np.stack(batch.action),
+                        done=np.stack(batch.done),
+                        behavior_policy=np.stack(batch.behavior_policy))
                 writer.add_scalar('data/simclr_loss', simclr_loss, train_step)
                 writer.add_scalar('data/pi_loss', pi_loss, train_step)
                 writer.add_scalar('data/baseline_loss', baseline_loss, train_step)
@@ -128,8 +114,8 @@ def main(_):
 
                 if train_step % 300 == 0:
                     learner.save_weights('saved_impala/model', step=train_step)
-                print(f'train : {train_step}')
-
+                print(f'train : {train_step}', time.time() - s)
+                
     else:
 
         trajectory = utils.UnrolledTrajectory()
