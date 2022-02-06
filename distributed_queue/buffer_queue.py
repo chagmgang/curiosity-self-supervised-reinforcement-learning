@@ -20,8 +20,9 @@ class FIFOQueue:
         self.unrolled_behavior_policy = tf.placeholder(tf.float32, [self.trajectory, self.output_size])
         self.unrolled_action = tf.placeholder(tf.int32, [self.trajectory])
 
-        self.queue = tf.FIFOQueue(
+        self.queue = tf.RandomShuffleQueue(
                 queue_size,
+                batch_size,
                 [self.unrolled_state.dtype,
                  self.unrolled_next_state.dtype,
                  self.unrolled_reward.dtype,

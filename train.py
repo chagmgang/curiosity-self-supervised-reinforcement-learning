@@ -88,9 +88,6 @@ def main(_):
         writer = SummaryWriter('runs/learner')
         train_step = 0
 
-        #batch_sample_replay_buffer = utils.BatchSampleReplayBuffer(
-        #        batch_size=data['batch_size'],
-        #        collection_size=int(data['replay_buffer_size']))
         while True:
 
             ### fifo to replay buffer
