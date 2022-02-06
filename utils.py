@@ -44,38 +44,46 @@ def check_properties(data):
     assert len(data['available_action']) == len(data['env'])
     assert data['reward_clipping'] in ['abs_one', 'soft_asymmetric']
 
-class UnrolledA3CTrajectory:
+class BatchSampleReplayBuffer:
 
-    def __init__(self):
-        self.trajectory_data = collections.namedtuple(
-                'trajectory_data',
-                ['state', 'next_state', 'reward', 'done',
-                 'action', 'previous_action'])
+    def __init__(self, batch_size, collection_size):
 
-    def initialize(self):
-        self.unroll_data = self.trajectory_data(
-                [],[],[],[],[],[])
+        self.batch_size = batch_size
+        self.state = collections.deque(maxlen=collection_size)
+        self.action = collections.deque(maxlen=collection_size)
+        self.reward = collections.deque(maxlen=collection_size)
+        self.done = collections.deque(maxlen=collection_size)
+        self.behavior_policy = collections.deque(maxlen=collection_size)
 
-    def append(self, state, next_state, previous_action,
-               action, reward, done):
+    def append(self, state, reward, action, done, behavior_policy):
 
-        self.unroll_data.state.append(state)
-        self.unroll_data.next_state.append(next_state)
-        self.unroll_data.previous_action.append(previous_action)
-        self.unroll_data.action.append(action)
-        self.unroll_data.reward.append(reward)
-        self.unroll_data.done.append(done)
+        self.state.append(state)
+        self.reward.append(reward)
+        self.action.append(action)
+        self.done.append(done)
+        self.behavior_policy.append(behavior_policy)
 
-    def extract(self):
-        data = {
-                'state': np.stack(self.unroll_data.state),
-                'next_state': np.stack(self.unroll_data.next_state),
-                'previous_action': np.stack(self.unroll_data.previous_action),
-                'action': np.stack(self.unroll_data.action),
-                'reward': np.stack(self.unroll_data.reward),
-                'done': np.stack(self.unroll_data.done)}
-        return data
+    def sample(self):
 
+        idx = [i for i in range(len(self.state))]
+        np.random.shuffle(idx)
+        select_idx = idx[:self.batch_size]
+
+        state = [self.state[i] for i in idx]
+        action = [self.action[i] for i in idx]
+        reward = [self.reward[i] for i in idx]
+        done = [self.done[i] for i in idx]
+        behavior_policy = [self.behavior_policy[i] for i in idx]
+
+        return dict(
+                state=np.stack(state),
+                action=np.stack(action),
+                reward=np.stack(reward),
+                done=np.stack(done),
+                behavior_policy=np.stack(behavior_policy))
+
+    def __len__(self):
+        return len(self.state)
 
 class UnrolledTrajectory:
 
